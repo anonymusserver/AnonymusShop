@@ -37,18 +37,23 @@
 #define ResetRemoteDlcTrace() ((void)0)
 
 namespace {
-    constexpr int kGridCols = 7;
-    constexpr int kGridRows = 3;
-    constexpr int kGridTileWidth = 136;
-    constexpr int kGridTileHeight = 136;
-    constexpr int kGridGap = 32;
+    // Anonymus Shop: menú lateral a la izquierda y carátulas grandes a la derecha.
+    constexpr int kSidebarWidth = 230;
+    constexpr int kSidebarTop = 122;
+    constexpr int kSidebarRowHeight = 42;
+    constexpr int kSidebarRows = 12;
+    constexpr int kGridCols = 5;
+    constexpr int kGridRows = 2;
+    constexpr int kGridTileWidth = 180;
+    constexpr int kGridTileHeight = 180;
+    constexpr int kGridGap = 22;
     constexpr int kGridWidth = (kGridCols * kGridTileWidth) + ((kGridCols - 1) * kGridGap);
-    constexpr int kGridStartX = (1280 - kGridWidth) / 2;
-    constexpr int kGridStartY = 148;
+    constexpr int kGridStartX = kSidebarWidth + (1280 - kSidebarWidth - kGridWidth) / 2;
+    constexpr int kGridStartY = 156;
     constexpr int kGridItemsPerPage = kGridCols * kGridRows;
-    constexpr int kBrowseListX = 24;
+    constexpr int kBrowseListX = 250;
     constexpr int kBrowseListY = 150;
-    constexpr int kBrowseListWidth = 840;
+    constexpr int kBrowseListWidth = 620;
     constexpr int kBrowseRowHeight = 68;
     constexpr int kBrowseVisibleRows = 7;
     constexpr int kListMarqueeStartDelayMs = 2000;
@@ -1091,7 +1096,7 @@ namespace inst::ui {
         this->loadingDetailText = TextBlock::New(260, 420, "", 20);
         this->loadingDetailText->SetColor(COLOR("#FFFFFFBB"));
         this->loadingDetailText->SetVisible(false);
-        this->searchInfoText = TextBlock::New(24, 116, "", 16);
+        this->searchInfoText = TextBlock::New(250, 116, "", 16);
         this->searchInfoText->SetColor(COLOR("#FFFFFFFF"));
         this->searchInfoText->SetVisible(false);
         this->butText = TextBlock::New(24, 672, "", 18);
@@ -1238,21 +1243,36 @@ namespace inst::ui {
         }
         for (int i = 0; i < kBrowseVisibleRows; ++i) {
             const int y = kBrowseListY + i * kBrowseRowHeight;
-            auto cover = Image::New(49, y + 5, inst::theme::Asset("romfs:/images/icons/title-placeholder.png"));
+            auto cover = Image::New(kBrowseListX + 25, y + 5, inst::theme::Asset("romfs:/images/icons/title-placeholder.png"));
             cover->SetWidth(58); cover->SetHeight(58); cover->SetVisible(false);
             this->listRowCovers.push_back(cover);
             this->listRowCoverKeys.push_back("");
-            auto detail = TextBlock::New(132, y + 50, "", 14);
+            auto detail = TextBlock::New(kBrowseListX + 108, y + 50, "", 14);
             detail->SetColor(inst::theme::Color("muted_text", COLOR("#A8A8B8FF")));
             this->listRowMetadata.push_back(detail);
-            auto size = TextBlock::New(760, y + 20, "", 17);
+            auto size = TextBlock::New(kBrowseListX + kBrowseListWidth - 110, y + 20, "", 17);
             size->SetColor(COLOR("#FFFFFFFF"));
             this->listRowSizes.push_back(size);
-            auto selected = TextBlock::New(754, y + 46, "", 14);
+            auto selected = TextBlock::New(kBrowseListX + kBrowseListWidth - 116, y + 46, "", 14);
             selected->SetColor(inst::theme::Color("accent", COLOR("#FF7777FF")));
             this->listRowSelections.push_back(selected);
             for (auto text : {detail, size, selected}) text->SetVisible(false);
         }
+        this->sidebarBack = Rectangle::New(0, kSidebarTop - 14, kSidebarWidth, kSidebarRows * kSidebarRowHeight + 28,
+            inst::theme::Color("panel", COLOR("#0A140EE6")), 0);
+        this->sidebarHighlight = Rectangle::New(10, kSidebarTop, kSidebarWidth - 20, kSidebarRowHeight - 4,
+            inst::theme::Color("accent", COLOR("#00FF66FF")), 8);
+        this->sidebarTitle = TextBlock::New(18, kSidebarTop - 40, "SECCIONES", 15);
+        this->sidebarTitle->SetColor(inst::theme::Color("muted_text", COLOR("#5FAE7DFF")));
+        for (int i = 0; i < kSidebarRows; ++i) {
+            auto t = TextBlock::New(22, kSidebarTop + i * kSidebarRowHeight + 8, "", 18);
+            t->SetColor(COLOR("#FFFFFFFF"));
+            t->SetVisible(false);
+            this->sidebarTexts.push_back(t);
+        }
+        this->sidebarBack->SetVisible(false);
+        this->sidebarHighlight->SetVisible(false);
+        this->sidebarTitle->SetVisible(false);
         for (auto text : {this->previousSectionText, this->nextSectionText, this->browseSummaryText,
                 this->focusedTitleText, this->focusedMetadataText}) text->SetVisible(false);
         this->sectionHighlight->SetVisible(false);
@@ -1282,6 +1302,10 @@ namespace inst::ui {
         this->Add(this->butText);
         this->Add(this->secondaryHintText);
         this->Add(this->sectionHighlight);
+        this->Add(this->sidebarBack);
+        this->Add(this->sidebarHighlight);
+        this->Add(this->sidebarTitle);
+        for (auto& t : this->sidebarTexts) this->Add(t);
         this->Add(this->pageInfoText);
         this->Add(this->loadingStagesBack);
         this->Add(this->loadingStagesText);
@@ -1642,7 +1666,7 @@ namespace inst::ui {
         this->pageInfoText->SetText(ClipBrowseText(queueAddMode ? "Add to queue  •  " + section.title : section.title, 26, 396));
         this->pageInfoText->SetY(81);
         CenterTextX(this->pageInfoText);
-        std::string rightInfo = std::to_string(section.items.size()) + " titles";
+        std::string rightInfo = std::to_string(section.items.size()) + " juegos";
         if (!this->searchQuery.empty()) {
             std::string query = inst::util::shortenString(this->searchQuery, 28, true);
             rightInfo += "   •   Search: " + query;
@@ -1660,10 +1684,53 @@ namespace inst::ui {
 
         if (!rightInfo.empty()) {
             this->searchInfoText->SetText(rightInfo);
-            this->searchInfoText->SetX(24);
+            this->searchInfoText->SetX(250);
             this->searchInfoText->SetVisible(true);
         } else {
             this->searchInfoText->SetVisible(false);
+        }
+    }
+
+    void remoteInstPage::updateSidebar(bool visible) {
+        const int count = static_cast<int>(this->remoteSections.size());
+        if (!visible || count == 0) {
+            this->sidebarBack->SetVisible(false);
+            this->sidebarHighlight->SetVisible(false);
+            this->sidebarTitle->SetVisible(false);
+            for (auto& t : this->sidebarTexts) t->SetVisible(false);
+            this->sidebarIndices.clear();
+            return;
+        }
+        std::vector<int> usable;
+        for (int i = 0; i < count; ++i)
+            if (!this->queueAddMode || this->isQueueSection(i)) usable.push_back(i);
+        int pos = 0;
+        for (std::size_t i = 0; i < usable.size(); ++i)
+            if (usable[i] == this->selectedSectionIndex) pos = static_cast<int>(i);
+        int first = std::max(0, pos - kSidebarRows / 2);
+        first = std::min(first, std::max(0, static_cast<int>(usable.size()) - kSidebarRows));
+        this->sidebarIndices.clear();
+        this->sidebarBack->SetVisible(true);
+        this->sidebarTitle->SetVisible(true);
+        this->sidebarHighlight->SetVisible(false);
+        for (int row = 0; row < kSidebarRows; ++row) {
+            auto& t = this->sidebarTexts[row];
+            const int u = first + row;
+            if (u >= static_cast<int>(usable.size())) {
+                t->SetVisible(false);
+                continue;
+            }
+            const int index = usable[u];
+            this->sidebarIndices.push_back(index);
+            const bool current = index == this->selectedSectionIndex;
+            const std::string label = ClipBrowseText(this->remoteSections[index].title, 18, kSidebarWidth - 44);
+            if (t->GetText() != label) t->SetText(label);
+            t->SetColor(current ? inst::theme::Color("selected_text", COLOR("#031008FF")) : COLOR("#D6FFE4FF"));
+            t->SetVisible(true);
+            if (current) {
+                this->sidebarHighlight->SetY(kSidebarTop + row * kSidebarRowHeight);
+                this->sidebarHighlight->SetVisible(true);
+            }
         }
     }
 
@@ -1675,6 +1742,7 @@ namespace inst::ui {
             this->sectionHighlight->SetVisible(false);
             this->previousSectionText->SetVisible(false);
             this->nextSectionText->SetVisible(false);
+            this->updateSidebar(false);
             this->browseSummaryText->SetVisible(false);
             this->browseDetailPanel->SetVisible(false);
             this->focusedTitleText->SetVisible(false);
@@ -1722,24 +1790,25 @@ namespace inst::ui {
         text(this->previousSectionText, "  " + ClipBrowseText(this->remoteSections[previous].title, 18, 320));
         text(this->nextSectionText, ClipBrowseText(this->remoteSections[next].title, 18, 320) + "  ");
         this->nextSectionText->SetX(1256 - this->nextSectionText->GetTextWidth());
-        this->sectionHighlight->SetVisible(true);
-        this->previousSectionText->SetVisible(this->remoteSections.size() > 1);
-        this->nextSectionText->SetVisible(this->remoteSections.size() > 1);
-        std::string context = std::to_string(this->visibleItems.size()) + " titles";
-        if (!this->searchQuery.empty()) context += "   •   Search: " + this->searchQuery;
-        context += "   •   Sort: " + (this->isAllSection() ? this->getAllSortModeLabel() : std::string(this->getBrowseSortLabel()));
+        this->sectionHighlight->SetVisible(false);
+        this->previousSectionText->SetVisible(false);
+        this->nextSectionText->SetVisible(false);
+        this->updateSidebar(true);
+        std::string context = std::to_string(this->visibleItems.size()) + " juegos";
+        if (!this->searchQuery.empty()) context += "   •   Buscar: " + this->searchQuery;
+        context += "   •   Orden: " + (this->isAllSection() ? this->getAllSortModeLabel() : std::string(this->getBrowseSortLabel()));
         text(this->searchInfoText, ClipBrowseText(context, 16, 920));
         this->searchInfoText->SetVisible(true);
-        std::string summary = this->visibleItems.empty() ? "No titles"
-            : std::to_string(std::max(0, selected) + 1) + " of " + std::to_string(this->visibleItems.size());
+        std::string summary = this->visibleItems.empty() ? "Sin juegos"
+            : std::to_string(std::max(0, selected) + 1) + " de " + std::to_string(this->visibleItems.size());
         if (this->remoteGridMode && !this->visibleItems.empty()) {
-            summary = "Page " + std::to_string(selected / kGridItemsPerPage + 1) + "/"
+            summary = "Página " + std::to_string(selected / kGridItemsPerPage + 1) + "/"
                 + std::to_string((this->visibleItems.size() + kGridItemsPerPage - 1) / kGridItemsPerPage);
         }
         if (!this->selectedItems.empty()) {
             std::uint64_t bytes = 0;
             for (const auto& item : this->selectedItems) bytes += item.size;
-            summary += "   •   " + std::to_string(this->selectedItems.size()) + " selected";
+            summary += "   •   " + std::to_string(this->selectedItems.size()) + " elegidos";
             const auto size = FormatSizeText(bytes);
             if (!size.empty()) summary += " · " + size;
         }
@@ -1749,13 +1818,13 @@ namespace inst::ui {
         const auto status = [&](const remoteInstStuff::RemoteItem& item) -> std::string {
             if (item.isCheat) return "Cheat";
             if (!item.saveId.empty() || this->isSaveSyncSection()) return "Save backup";
-            std::string type = IsDlcItem(item) ? "DLC" : (IsUpdateItem(item) ? "Update" : "Game");
+            std::string type = !item.retroPath.empty() ? "Retro" : (IsDlcItem(item) ? "DLC" : (IsUpdateItem(item) ? "Actualización" : "Juego"));
             std::uint64_t baseId = 0;
             const bool installedBase = IsBaseItem(item) && DeriveBaseTitleId(item, baseId)
                 && this->installedSnapshot.baseInstalled.count(baseId) > 0
                 && this->installedSnapshot.baseInstalled.at(baseId);
-            if (this->isInstalledSection() || installedBase) type += "  •  Installed";
-            else if (this->queueAddMode && !instPage::canEnqueueTitle(item.url)) type += "  •  Queued";
+            if (this->isInstalledSection() || installedBase) type += "  •  Instalado";
+            else if (this->queueAddMode && !instPage::canEnqueueTitle(item.url)) type += "  •  En cola";
             return type;
         };
         const bool marqueeVisible = this->remoteGridMode && selected >= 0
@@ -2077,7 +2146,7 @@ namespace inst::ui {
 
         const int menuX = this->menu->GetProcessedX();
         textX = menuX + this->menu->GetItemSize() + 40;
-        int maxRowRight = textX + 550;
+        int maxRowRight = textX + 440;
         if (maxRowRight < textX)
             maxRowRight = textX;
         textWidth = maxRowRight - textX;
@@ -4832,6 +4901,21 @@ namespace inst::ui {
         if (DetectBottomHintTap(Pos, this->bottomHintTouch, 668, 52, bottomTapX)) {
             Down |= FindBottomHintButton(this->bottomHintTouch.startY >= 697
                 ? this->secondaryHintSegments : this->bottomHintSegments, bottomTapX);
+        }
+        int sidebarTapX = 0;
+        if (!this->descriptionOverlayVisible && !this->saveVersionSelectorVisible && !this->remoteSections.empty()
+            && DetectBottomHintTap(Pos, this->sidebarTouch, kSidebarTop, kSidebarRows * kSidebarRowHeight, sidebarTapX)
+            && this->sidebarTouch.startX < kSidebarWidth) {
+            const int row = (this->sidebarTouch.startY - kSidebarTop) / kSidebarRowHeight;
+            if (row >= 0 && row < static_cast<int>(this->sidebarIndices.size())) {
+                const int target = this->sidebarIndices[row];
+                const int count = static_cast<int>(this->remoteSections.size());
+                if (target != this->selectedSectionIndex && count > 1) {
+                    // Se pone justo antes de la sección tocada y se reutiliza el paso de "R".
+                    this->selectedSectionIndex = (target - 1 + count) % count;
+                    Down |= HidNpadButton_R;
+                }
+            }
         }
         int sectionTapX = 0;
         if (!this->descriptionOverlayVisible && !this->saveVersionSelectorVisible

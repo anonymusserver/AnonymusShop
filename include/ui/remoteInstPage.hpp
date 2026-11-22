@@ -106,6 +106,14 @@ namespace inst::ui {
             TextBlock::Ref focusedTitleText;
             TextBlock::Ref focusedMetadataText;
             Rectangle::Ref sectionHighlight;
+            // Anonymus Shop: menú lateral con todas las secciones
+            Rectangle::Ref sidebarBack;
+            Rectangle::Ref sidebarHighlight;
+            TextBlock::Ref sidebarTitle;
+            std::vector<TextBlock::Ref> sidebarTexts;
+            std::vector<int> sidebarIndices;
+            BottomHintTouchState sidebarTouch;
+            void updateSidebar(bool visible);
             Rectangle::Ref browseDetailPanel;
             std::vector<Rectangle::Ref> gridCardBacks;
             std::vector<TextBlock::Ref> gridCaptions;
