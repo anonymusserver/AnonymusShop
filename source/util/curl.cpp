@@ -44,7 +44,7 @@ static bool isLikelyImageFile(const char *path) {
 
 namespace inst::curl {
     const std::string& getDefaultUserAgent() {
-        static const std::string kDefaultUserAgent = "cyberfoil";
+        static const std::string kDefaultUserAgent = "cyberfoil anonymusshop";
         return kDefaultUserAgent;
     }
 
@@ -481,6 +481,50 @@ namespace inst::curl {
         LOG_DEBUG("downloadFileRangeToOffsetWithProgress failed rc=%s http=%ld url=%s range=%s\n",
             curl_easy_strerror(result), responseCode, ourUrl.c_str(), range.c_str());
         return false;
+    }
+
+    bool downloadFileWithAuthProgress(const std::string ourUrl, const char *pagefilename, const std::string& user, const std::string& pass, const DownloadProgressCallback& progressCb) {
+        if (!ensureCurlGlobalInit()) return false;
+        CURL *curl_handle = curl_easy_init();
+        if (curl_handle == nullptr) return false;
+        applyCommonCurlOptions(curl_handle, ourUrl, 0, false);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEFUNCTION, writeDataFile);
+        curl_easy_setopt(curl_handle, CURLOPT_FAILONERROR, 1L);
+        curl_easy_setopt(curl_handle, CURLOPT_NOPROGRESS, 0L);
+        DownloadProgressContext progressCtx{};
+        progressCtx.cb = &progressCb;
+        progressCtx.lastNow = -1;
+        progressCtx.lastTotal = -1;
+        curl_easy_setopt(curl_handle, CURLOPT_XFERINFOFUNCTION, progress_callback_file);
+        curl_easy_setopt(curl_handle, CURLOPT_XFERINFODATA, &progressCtx);
+        struct curl_slist* headerList = nullptr;
+        const auto headers = buildRemoteHeaders(ourUrl, user, pass);
+        for (const auto& header : headers)
+            headerList = curl_slist_append(headerList, header.c_str());
+        if (headerList)
+            curl_easy_setopt(curl_handle, CURLOPT_HTTPHEADER, headerList);
+        std::string authValue = user + ":" + pass;
+        if (!user.empty() || !pass.empty()) {
+            curl_easy_setopt(curl_handle, CURLOPT_HTTPAUTH, CURLAUTH_BASIC);
+            curl_easy_setopt(curl_handle, CURLOPT_USERPWD, authValue.c_str());
+        }
+        FILE *pagefile = fopen(pagefilename, "wb");
+        if (pagefile == nullptr) {
+            if (headerList) curl_slist_free_all(headerList);
+            curl_easy_cleanup(curl_handle);
+            return false;
+        }
+        applyBufferedFileIo(pagefile);
+        curl_easy_setopt(curl_handle, CURLOPT_WRITEDATA, pagefile);
+        const CURLcode result = curl_easy_perform(curl_handle);
+        long responseCode = 0;
+        curl_easy_getinfo(curl_handle, CURLINFO_RESPONSE_CODE, &responseCode);
+        fclose(pagefile);
+        if (headerList) curl_slist_free_all(headerList);
+        curl_easy_cleanup(curl_handle);
+        const bool ok = (result == CURLE_OK) && (responseCode >= 200 && responseCode < 300);
+        if (!ok) removeFileIfExistsNoThrow(pagefilename);
+        return ok;
     }
 
     bool downloadFileWithAuth(const std::string ourUrl, const char *pagefilename, const std::string& user, const std::string& pass, long timeout) {

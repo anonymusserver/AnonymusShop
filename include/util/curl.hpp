@@ -13,6 +13,7 @@ namespace inst::curl {
     bool downloadFileRangeWithProgress(const std::string ourUrl, const char *pagefilename, std::uint64_t start, std::uint64_t endInclusive, long timeout, const DownloadProgressCallback& progressCb = {});
     bool downloadFileRangeToOffsetWithProgress(const std::string ourUrl, const char *pagefilename, std::uint64_t fileOffset, std::uint64_t start, std::uint64_t endInclusive, long timeout, const DownloadProgressCallback& progressCb = {});
     bool downloadFileWithAuth(const std::string ourUrl, const char *pagefilename, const std::string& user, const std::string& pass, long timeout = 5000);
+    bool downloadFileWithAuthProgress(const std::string ourUrl, const char *pagefilename, const std::string& user, const std::string& pass, const DownloadProgressCallback& progressCb);
     bool downloadImageWithAuth(const std::string ourUrl, const char *pagefilename, const std::string& user, const std::string& pass, long timeout = 5000);
     std::string downloadToBuffer (const std::string ourUrl, int firstRange = -1, int secondRange = -1, long timeout = 5000);
 }

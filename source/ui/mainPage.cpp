@@ -868,6 +868,15 @@ namespace inst::ui {
         if (this->optionMenu != nullptr && this->optionMenu->IsVisible()) {
             return;
         }
+        // Anonymus Shop: al abrir la app se entra directamente en la tienda si ya hay servidor guardado.
+        static bool anonymusAutoShopDone = false;
+        if (!anonymusAutoShopDone) {
+            anonymusAutoShopDone = true;
+            if (!inst::config::remoteUrl.empty() && inst::util::getIPAddress() != "1.0.0.127") {
+                this->remoteInstallMenuItem_Click();
+                return;
+            }
+        }
 
         int bottomTapX = 0;
         if (DetectBottomHintTap(Pos, this->bottomHintTouch, 668, 52, bottomTapX)) {

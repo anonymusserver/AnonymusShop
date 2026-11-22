@@ -1311,6 +1311,11 @@ namespace {
                                 item.hasIconUrl = true;
                             }
                         }
+                        if (entry.contains("sd_path") && entry["sd_path"].is_string()) {
+                            item.retroPath = entry["sd_path"].get<std::string>();
+                            if (item.retroPath.find("..") != std::string::npos || item.retroPath.rfind("/roms/", 0) != 0)
+                                item.retroPath.clear();
+                        }
                         if (entry.contains("save_id") && entry["save_id"].is_string())
                             item.saveId = entry["save_id"].get<std::string>();
                         else if (entry.contains("saveId") && entry["saveId"].is_string())
@@ -2953,7 +2958,7 @@ namespace remoteInstStuff {
 
         std::vector<inst::ui::QueueEntry> queueEntries;
         for (const auto& item : catalog) {
-            std::string detail = item.appType == NcmContentMetaType_Patch ? "Update" : (item.appType == NcmContentMetaType_AddOnContent ? "DLC" : "Game");
+            std::string detail = !item.retroPath.empty() ? "Retro" : (item.appType == NcmContentMetaType_Patch ? "Update" : (item.appType == NcmContentMetaType_AddOnContent ? "DLC" : "Game"));
             if (item.size) detail += "  •  " + FormatOneDecimal(static_cast<double>(item.size) / (item.size >= 1000000000 ? 1000000000.0 : 1000000.0)) + (item.size >= 1000000000 ? " GB" : " MB");
             queueEntries.push_back({item.name, item.url, detail, GetRemoteIconCachePath(item, false), GetOfflineLookupTitleId(item), item.hasIconUrl ? item.iconUrl : ""});
         }
@@ -2988,6 +2993,31 @@ namespace remoteInstStuff {
                     inst::diag::NoteStep("Index source URL: " + currentIndexSourceUrl, false);
                 UpdateInstallIcon(catalog[i]);
                 inst::ui::instPage::setTopInstInfoText("inst.info_page.top_info0"_lang + currentName + sourceLabel);
+                if (!catalog[i].retroPath.empty()) {
+                    // Juego retro: se guarda tal cual en la SD (carpeta /roms/<consola>/) para RetroArch.
+                    const std::string dest = "sdmc:" + catalog[i].retroPath;
+                    std::error_code dirError;
+                    std::filesystem::create_directories(std::filesystem::path(dest).parent_path(), dirError);
+                    const std::string tmp = dest + ".part";
+                    inst::ui::instPage::setInstInfoText("Descargando juego retro...");
+                    inst::ui::instPage::setInstBarPerc(0);
+                    inst::diag::NoteInstallStarted(currentName);
+                    const bool ok = inst::curl::downloadFileWithAuthProgress(catalog[i].url, tmp.c_str(),
+                        inst::config::remoteUser, inst::config::remotePass,
+                        [](std::uint64_t now, std::uint64_t total) {
+                            if (total > 0) inst::ui::instPage::setInstBarPerc(static_cast<double>(now) * 100.0 / static_cast<double>(total));
+                        });
+                    if (!ok) THROW_FORMAT("No se pudo descargar el juego retro.");
+                    std::error_code mvError;
+                    std::filesystem::remove(dest, mvError);
+                    std::filesystem::rename(tmp, dest, mvError);
+                    if (mvError) THROW_FORMAT("No se pudo guardar el juego en la SD.");
+                    inst::diag::RecordSuccess(currentName);
+                    ++completedCount;
+                    inst::ui::instPage::finishQueuedItem();
+                    inst::ui::instPage::setInstInfoText("Guardado en " + catalog[i].retroPath + " (ábrelo con RetroArch)");
+                    continue;
+                }
                 std::unique_ptr<tin::install::Install> installTask;
                 bool isXci = IsXciExtension(catalog[i].name) || IsXciExtension(catalog[i].url) ||
                     IsXciMagic(catalog[i].url, catalog[i].requestHeaders);

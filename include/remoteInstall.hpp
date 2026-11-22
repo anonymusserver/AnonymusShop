@@ -23,6 +23,8 @@ namespace remoteInstStuff {
         std::string cheatTitleId;
         std::string cheatBuildId;
         std::string cheatNote;
+        // Juego retro: ruta en la SD donde se guarda (p. ej. /roms/snes/juego.sfc). Vacío = juego de Switch.
+        std::string retroPath;
         std::uint64_t saveCreatedTs = 0;
         std::uint64_t size = 0;
         std::uint64_t titleId = 0;

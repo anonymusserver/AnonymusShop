@@ -54,6 +54,18 @@ namespace inst::theme {
             return fallback;
         }
 
+        // Colores de Anonymus Shop: se usan siempre que el tema elegido no ponga los suyos.
+        void ApplyBuiltinDefaults() {
+            static const std::pair<const char*, const char*> kDefaults[] = {
+                {"background", "#050806FF"}, {"header", "#08110BF2"}, {"footer", "#08110BF2"},
+                {"panel", "#0A140EE6"}, {"text", "#D6FFE4FF"}, {"selected_text", "#031008FF"},
+                {"muted_text", "#5FAE7DFF"}, {"accent", "#00FF66FF"}, {"highlight", "#00FF6655"},
+                {"scrollbar", "#00FF6680"}, {"progress_track", "#12331DFF"},
+            };
+            for (const auto& entry : kDefaults) g_colors[entry.first] = pu::ui::Color::FromHex(entry.second);
+            g_name = "Anonymus";
+        }
+
         bool SameColor(pu::ui::Color left, pu::ui::Color right) {
             return left.R == right.R && left.G == right.G && left.B == right.B && left.A == right.A;
         }
@@ -185,6 +197,7 @@ namespace inst::theme {
         g_backgroundDim = 0.0f;
         g_name = "Default";
         g_noBackgroundImage = false;
+        ApplyBuiltinDefaults();
         if (!ValidManifestPath(selectedFile)) return;
         const auto manifest = std::filesystem::path(appDir) / "theme" / selectedFile;
         const auto directory = manifest.parent_path();
@@ -235,7 +248,7 @@ namespace inst::theme {
             g_backgroundPixels.clear();
             g_backgroundDim = 0.0f;
             g_noBackgroundImage = false;
-            g_name = "Default";
+            ApplyBuiltinDefaults();
             LOG_DEBUG("Theme: could not load theme.json, using defaults\n");
         }
     }

@@ -967,7 +967,7 @@ namespace inst::config {
         remoteHideIncompatibleCheats = false;
         remoteAllBaseOnly = true;
         remoteLegacyMode = false;
-        remoteStartGridMode = false;
+        remoteStartGridMode = true;
         offlineDbAutoCheckOnStartup = true;
         verboseInstallLogging = false;
         bool hasHttpUserAgentModeKey = false;
