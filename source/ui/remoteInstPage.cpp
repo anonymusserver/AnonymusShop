@@ -42,18 +42,18 @@ namespace {
     constexpr int kSidebarTop = 122;
     constexpr int kSidebarRowHeight = 42;
     constexpr int kSidebarRows = 12;
-    constexpr int kGridCols = 5;
+    constexpr int kGridCols = 6;
     constexpr int kGridRows = 2;
     constexpr int kGridTileWidth = 180;
     constexpr int kGridTileHeight = 180;
-    constexpr int kGridGap = 22;
+    constexpr int kGridGap = 24;
     constexpr int kGridWidth = (kGridCols * kGridTileWidth) + ((kGridCols - 1) * kGridGap);
-    constexpr int kGridStartX = kSidebarWidth + (1280 - kSidebarWidth - kGridWidth) / 2;
-    constexpr int kGridStartY = 156;
+    constexpr int kGridStartX = (1280 - kGridWidth) / 2;
+    constexpr int kGridStartY = 160;
     constexpr int kGridItemsPerPage = kGridCols * kGridRows;
-    constexpr int kBrowseListX = 250;
+    constexpr int kBrowseListX = 24;
     constexpr int kBrowseListY = 150;
-    constexpr int kBrowseListWidth = 620;
+    constexpr int kBrowseListWidth = 840;
     constexpr int kBrowseRowHeight = 68;
     constexpr int kBrowseVisibleRows = 7;
     constexpr int kListMarqueeStartDelayMs = 2000;
@@ -991,6 +991,10 @@ namespace {
 }
 
 namespace inst::ui {
+    std::string g_remoteStartSection;
+}
+
+namespace inst::ui {
     // Image/texture creation is confined to the UI thread, with explicit failure checks.
     class RemoteScreenshotImage : public pu::ui::elm::Element {
         public:
@@ -1096,7 +1100,7 @@ namespace inst::ui {
         this->loadingDetailText = TextBlock::New(260, 420, "", 20);
         this->loadingDetailText->SetColor(COLOR("#FFFFFFBB"));
         this->loadingDetailText->SetVisible(false);
-        this->searchInfoText = TextBlock::New(250, 116, "", 16);
+        this->searchInfoText = TextBlock::New(24, 116, "", 16);
         this->searchInfoText->SetColor(COLOR("#FFFFFFFF"));
         this->searchInfoText->SetVisible(false);
         this->butText = TextBlock::New(24, 672, "", 18);
@@ -1181,19 +1185,31 @@ namespace inst::ui {
         this->descriptionText = TextBlock::New(22, 518, "", 18);
         this->descriptionText->SetColor(COLOR("#FFFFFFFF"));
         this->descriptionText->SetVisible(false);
-        this->descriptionOverlayRect = Rectangle::New(24, 86, 1232, 564, inst::config::oledMode ? COLOR("#000000EE") : COLOR("#170909EE"));
+        this->descriptionOverlayRect = Rectangle::New(24, 86, 1232, 564, COLOR("#07100BF5"), 16);
         this->descriptionOverlayRect->SetVisible(false);
-        this->descriptionOverlayTitleText = TextBlock::New(46, 102, "", 24);
+        this->descriptionOverlayTitleText = TextBlock::New(340, 106, "", 28);
         this->descriptionOverlayTitleText->SetColor(COLOR("#FFFFFFFF"));
         this->descriptionOverlayTitleText->SetVisible(false);
-        this->descriptionOverlayBodyText = TextBlock::New(46, 142, "", 19);
+        this->descriptionOverlayBodyText = TextBlock::New(340, 190, "", 19);
         this->descriptionOverlayBodyText->SetColor(COLOR("#FFFFFFFF"));
         this->descriptionOverlayBodyText->SetVisible(false);
-        this->descriptionOverlayHintText = TextBlock::New(46, 548, "", 18);
+        this->descriptionOverlayHintText = TextBlock::New(340, 600, "", 16);
         this->descriptionOverlayHintText->SetColor(inst::theme::Color("muted_text", COLOR("#A8A8B8FF")));
         this->descriptionOverlayHintText->SetVisible(false);
         this->descriptionScreenshotBack = Rectangle::New(592, 162, 640, 367, inst::theme::Color("panel", COLOR("#17171CFF")), 10);
         this->descriptionScreenshotBack->SetVisible(false);
+        this->fichaCover = Image::New(46, 106, "romfs:/images/awoos/5bbdbcf9a5625cd307c9e9bc360d78bd.png");
+        this->fichaCover->SetWidth(270);
+        this->fichaCover->SetHeight(270);
+        this->fichaCover->SetVisible(false);
+        this->fichaButton = Rectangle::New(46, 396, 270, 56, inst::theme::Color("accent", COLOR("#00FF66FF")), 12);
+        this->fichaButton->SetVisible(false);
+        this->fichaButtonText = TextBlock::New(112, 410, "\uE0A0  Descargar", 24);
+        this->fichaButtonText->SetColor(COLOR("#031008FF"));
+        this->fichaButtonText->SetVisible(false);
+        this->fichaInfoText = TextBlock::New(46, 470, "", 17);
+        this->fichaInfoText->SetColor(inst::theme::Color("muted_text", COLOR("#9FD8B4FF")));
+        this->fichaInfoText->SetVisible(false);
         this->descriptionScreenshotImage = std::make_shared<RemoteScreenshotImage>();
         this->descriptionScreenshotImage->SetVisible(false);
         this->descriptionScreenshotStatus = TextBlock::New(600, 548, "", 18);
@@ -1365,6 +1381,10 @@ namespace inst::ui {
         this->Add(this->descriptionOverlayHintText);
         this->Add(this->descriptionScreenshotBack);
         this->Add(this->descriptionScreenshotImage);
+        this->Add(this->fichaCover);
+        this->Add(this->fichaButton);
+        this->Add(this->fichaButtonText);
+        this->Add(this->fichaInfoText);
         this->Add(this->descriptionScreenshotStatus);
         this->Add(this->saveVersionSelectorRect);
         this->Add(this->saveVersionSelectorTitleText);
@@ -1684,7 +1704,7 @@ namespace inst::ui {
 
         if (!rightInfo.empty()) {
             this->searchInfoText->SetText(rightInfo);
-            this->searchInfoText->SetX(250);
+            this->searchInfoText->SetX(24);
             this->searchInfoText->SetVisible(true);
         } else {
             this->searchInfoText->SetVisible(false);
@@ -1790,10 +1810,10 @@ namespace inst::ui {
         text(this->previousSectionText, "  " + ClipBrowseText(this->remoteSections[previous].title, 18, 320));
         text(this->nextSectionText, ClipBrowseText(this->remoteSections[next].title, 18, 320) + "  ");
         this->nextSectionText->SetX(1256 - this->nextSectionText->GetTextWidth());
-        this->sectionHighlight->SetVisible(false);
-        this->previousSectionText->SetVisible(false);
-        this->nextSectionText->SetVisible(false);
-        this->updateSidebar(true);
+        this->sectionHighlight->SetVisible(true);
+        this->previousSectionText->SetVisible(this->remoteSections.size() > 1);
+        this->nextSectionText->SetVisible(this->remoteSections.size() > 1);
+        this->updateSidebar(false);
         std::string context = std::to_string(this->visibleItems.size()) + " juegos";
         if (!this->searchQuery.empty()) context += "   •   Buscar: " + this->searchQuery;
         context += "   •   Orden: " + (this->isAllSection() ? this->getAllSortModeLabel() : std::string(this->getBrowseSortLabel()));
@@ -2146,7 +2166,7 @@ namespace inst::ui {
 
         const int menuX = this->menu->GetProcessedX();
         textX = menuX + this->menu->GetItemSize() + 40;
-        int maxRowRight = textX + 440;
+        int maxRowRight = textX + 550;
         if (maxRowRight < textX)
             maxRowRight = textX;
         textWidth = maxRowRight - textX;
@@ -4137,6 +4157,10 @@ namespace inst::ui {
         this->descriptionOverlayTitleText->SetVisible(false);
         this->descriptionOverlayBodyText->SetVisible(false);
         this->descriptionOverlayHintText->SetVisible(false);
+        this->fichaCover->SetVisible(false);
+        this->fichaButton->SetVisible(false);
+        this->fichaButtonText->SetVisible(false);
+        this->fichaInfoText->SetVisible(false);
         this->saveVersionSelectorRect->SetVisible(false);
         this->saveVersionSelectorTitleText->SetVisible(false);
         this->saveVersionSelectorMenu->SetVisible(false);
@@ -4479,6 +4503,20 @@ namespace inst::ui {
                 this->selectedSectionIndex = static_cast<int>(i);
                 break;
             }
+        }
+        if (!inst::ui::g_remoteStartSection.empty()) {
+            const std::string wanted = inst::ui::g_remoteStartSection;
+            inst::ui::g_remoteStartSection.clear();
+            bool foundWanted = false;
+            for (size_t i = 0; i < this->remoteSections.size(); i++) {
+                if (this->remoteSections[i].id.rfind(wanted, 0) == 0) {
+                    this->selectedSectionIndex = static_cast<int>(i);
+                    foundWanted = true;
+                    break;
+                }
+            }
+            if (!foundWanted && wanted == "retro_")
+                mainApp->CreateShowDialog("Retro", "Todav\u00EDa no hay juegos retro en el servidor.", {"common.ok"_lang}, true);
         }
         this->remoteGridMode = inst::config::remoteStartGridMode;
         this->remoteGridIndex = 0;
@@ -5797,7 +5835,32 @@ namespace inst::ui {
         this->descriptionOverlayVisible = true;
         this->descriptionGridTitleWasVisible = this->gridTitleText->IsVisible();
         this->gridTitleText->SetVisible(false);
-        this->descriptionOverlayTitleText->SetText(title);
+        this->descriptionOverlayTitleText->SetText(ClipBrowseText(title, 28, 880));
+        {
+            int idx = this->remoteGridMode ? this->remoteGridIndex : this->menu->GetSelectedIndex();
+            if (this->isInstalledSection() && this->remoteGridMode) idx = this->gridSelectedIndex;
+            if (idx >= 0 && idx < static_cast<int>(this->visibleItems.size())) {
+                const auto& it = this->visibleItems[idx];
+                const auto cover = GetRemoteGridIconCachePath(it);
+                if (!cover.empty() && std::filesystem::exists(cover)) {
+                    this->fichaCover->SetImage(cover);
+                    this->fichaCover->SetWidth(270);
+                    this->fichaCover->SetHeight(270);
+                    this->fichaCover->SetVisible(true);
+                }
+                std::string info = std::string(IsDlcItem(it) ? "DLC" : (IsUpdateItem(it) ? "Actualizaci\u00F3n" : "Juego"));
+                if (it.size > 0) {
+                    char buf[48];
+                    std::snprintf(buf, sizeof(buf), "%.2f GB", static_cast<double>(it.size) / (1024.0 * 1024.0 * 1024.0));
+                    info += "  \u2022  " + std::string(buf);
+                }
+                this->fichaInfoText->SetText(info);
+                this->fichaInfoText->SetVisible(true);
+                const bool canInstall = !this->isInstalledSection() && !this->isSaveSyncSection() && !this->isCheatsSection();
+                this->fichaButton->SetVisible(canInstall);
+                this->fichaButtonText->SetVisible(canInstall);
+            }
+        }
         this->descriptionOverlayRect->SetVisible(true);
         this->descriptionOverlayTitleText->SetVisible(true);
         this->descriptionOverlayBodyText->SetVisible(true);
@@ -5988,7 +6051,7 @@ namespace inst::ui {
     }
 
     void remoteInstPage::reflowDescriptionOverlay() {
-        const int width = this->descriptionMediaPending || !this->descriptionScreenshotPaths.empty() ? 524 : 1188;
+        const int width = this->descriptionMediaPending || !this->descriptionScreenshotPaths.empty() ? 240 : 880;
         const auto font = pu::ui::render::LoadDefaultFont(19);
         const auto fallback = pu::ui::render::LoadSharedFont(pu::ui::render::SharedFont::NintendoExtended, 19);
         this->descriptionOverlayLines.clear();
@@ -6040,6 +6103,10 @@ namespace inst::ui {
         this->descriptionOverlayVisible = false;
         this->descriptionOverlayLines.clear();
         this->descriptionOverlayOffset = 0;
+        this->fichaCover->SetVisible(false);
+        this->fichaButton->SetVisible(false);
+        this->fichaButtonText->SetVisible(false);
+        this->fichaInfoText->SetVisible(false);
         this->descriptionOverlayRect->SetVisible(false);
         this->descriptionOverlayTitleText->SetVisible(false);
         this->descriptionOverlayBodyText->SetVisible(false);

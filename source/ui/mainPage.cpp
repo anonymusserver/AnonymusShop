@@ -26,18 +26,19 @@ namespace inst::ui {
     bool appletFinished = false;
     bool updateFinished = false;
     bool offlineDbUpdateCheckFinished = false;
-    constexpr int kMainGridCols = 3;
-    constexpr int kMainGridRows = 3;
-    constexpr int kMainGridTileWidth = 360;
-    constexpr int kMainGridTileHeight = 170;
-    constexpr int kMainGridGapX = 20;
-    constexpr int kMainGridGapY = 18;
+    // Anonymus Shop: inicio como las tiendas de siempre (logo arriba y 5 tarjetas altas).
+    constexpr int kMainGridCols = 5;
+    constexpr int kMainGridRows = 1;
+    constexpr int kMainGridTileWidth = 200;
+    constexpr int kMainGridTileHeight = 300;
+    constexpr int kMainGridGapX = 22;
+    constexpr int kMainGridGapY = 0;
     constexpr int kMainGridStartX = (1280 - ((kMainGridCols * kMainGridTileWidth) + ((kMainGridCols - 1) * kMainGridGapX))) / 2;
-    constexpr int kMainGridStartY = 100;
-    constexpr int kMainLabelPaddingX = 18;
-    constexpr int kMainLabelY = 116;
+    constexpr int kMainGridStartY = 262;
+    constexpr int kMainLabelPaddingX = 14;
+    constexpr int kMainLabelY = 226;
     constexpr int kMainLabelWidth = kMainGridTileWidth - (kMainLabelPaddingX * 2);
-    constexpr int kMainLabelHeight = 28;
+    constexpr int kMainLabelHeight = 30;
 
     struct BackupUserChoice {
         AccountUid uid = {};
@@ -261,6 +262,7 @@ namespace inst::ui {
 
     MainPage::MainPage() : Layout::Layout() {
         inst::theme::ApplyBackground(*this, inst::config::oledMode, inst::config::appDir);
+        this->SetBackgroundImage("romfs:/images/home/fondo_inicio.jpg");
         const auto topColor = inst::theme::Color("header", inst::config::oledMode ? COLOR("#000000FF") : COLOR("#170909FF"));
         const auto botColor = inst::theme::Color("footer", inst::config::oledMode ? COLOR("#000000FF") : COLOR("#17090980"));
         this->topRect = Rectangle::New(0, 0, 1280, 74, topColor);
@@ -273,9 +275,10 @@ namespace inst::ui {
             this->titleImage = Image::New(0, -8, inst::theme::Asset("romfs:/images/logo.png"));
             this->appVersionText = TextBlock::New(480, 29, "v" + inst::config::appVersion + (inst::config::appGitMeta.empty() ? "" : ("\n" + inst::config::appGitMeta)), 22);
         }
-        // Keep external banners within the existing header geometry.
-        this->titleImage->SetWidth(480);
-        this->titleImage->SetHeight(93);
+        // Anonymus Shop: logo grande centrado encima de las tarjetas.
+        this->titleImage = Image::New((1280 - 620) / 2, 88, "romfs:/images/home/logo_inicio.png");
+        this->titleImage->SetWidth(620);
+        this->titleImage->SetHeight(158);
         this->appVersionText->SetColor(COLOR("#FFFFFFFF"));
         this->timeText = TextBlock::New(0, 18, "--:--", 22);
         this->timeText->SetColor(COLOR("#FFFFFFFF"));
@@ -350,27 +353,13 @@ namespace inst::ui {
         this->exitMenuItem->SetIcon(inst::theme::Asset("romfs:/images/icons/exit-run.png"));
         const auto tileColor = inst::theme::Color("panel", inst::config::oledMode ? COLOR("#1A1A1ACC") : COLOR("#170909CC"));
         const auto highlightColor = inst::theme::Color("highlight", inst::config::oledMode ? COLOR("#FF4D4D66") : COLOR("#FF4D4D88"));
-        const std::vector<std::string> gridLabels = {
-            "main.menu.remote"_lang,
-            "main.menu.sd"_lang,
-            "main.menu.hdd"_lang,
-            "main.menu.mtp"_lang,
-            "main.menu.usb"_lang,
-            "main.menu.net"_lang,
-            "main.menu.backup"_lang,
-            "main.menu.set"_lang,
-            "main.menu.exit"_lang
-        };
+        const std::vector<std::string> gridLabels = {"Tienda", "Retro", "Mis juegos", "Descargas", "Ajustes"};
         const std::vector<std::string> gridIcons = {
-            inst::theme::Asset("romfs:/images/icons/remote.png"),
-            inst::theme::Asset("romfs:/images/icons/micro-sd.png"),
-            inst::theme::Asset("romfs:/images/icons/usb-install.png"),
-            inst::theme::Asset("romfs:/images/icons/usb-port.png"),
-            inst::theme::Asset("romfs:/images/icons/usb-port.png"),
-            inst::theme::Asset("romfs:/images/icons/cloud-download.png"),
-            inst::theme::Asset("romfs:/images/icons/save-data-cloud.png"),
-            inst::theme::Asset("romfs:/images/icons/settings.png"),
-            inst::theme::Asset("romfs:/images/icons/exit-run.png")
+            "romfs:/images/home/tienda.png",
+            "romfs:/images/home/retro.png",
+            "romfs:/images/home/misjuegos.png",
+            "romfs:/images/home/descargas.png",
+            "romfs:/images/home/ajustes.png"
         };
         this->mainGridTiles.reserve(kMainGridCols * kMainGridRows);
         this->mainGridIcons.reserve(kMainGridCols * kMainGridRows);
@@ -380,20 +369,20 @@ namespace inst::ui {
             const int row = i / kMainGridCols;
             const int x = kMainGridStartX + (col * (kMainGridTileWidth + kMainGridGapX));
             const int y = kMainGridStartY + (row * (kMainGridTileHeight + kMainGridGapY));
-            auto tile = Rectangle::New(x, y, kMainGridTileWidth, kMainGridTileHeight, tileColor, 18);
-            constexpr int kMainIconSize = 96;
-            auto icon = Image::New(x + ((kMainGridTileWidth - kMainIconSize) / 2), y + 22, gridIcons[i]);
-            icon->SetWidth(kMainIconSize);
-            icon->SetHeight(kMainIconSize);
-            auto label = OverflowText::New(22, COLOR("#FFFFFFFF"));
-            label->SetBounds(x + kMainLabelPaddingX, y + kMainLabelY, kMainLabelWidth, kMainLabelHeight);
-            label->SetBackgroundColor(tileColor);
+            auto tile = Rectangle::New(x, y, kMainGridTileWidth, kMainGridTileHeight, COLOR("#00000000"), 22);
+            auto icon = Image::New(x, y, gridIcons[i]);
+            icon->SetWidth(kMainGridTileWidth);
+            icon->SetHeight(kMainGridTileHeight);
+            auto label = OverflowText::New(24, COLOR("#FFFFFFFF"));
+            label->SetBounds(x + kMainLabelPaddingX + (kMainLabelWidth - static_cast<int>(gridLabels[i].size()) * 12) / 2, y + kMainLabelY, kMainLabelWidth, kMainLabelHeight);
+            label->SetBackgroundColor(COLOR("#00000000"));
             label->SetText(gridLabels[i]);
             this->mainGridTiles.push_back(tile);
             this->mainGridIcons.push_back(icon);
             this->mainGridLabels.push_back(label);
         }
-        this->mainGridHighlight = Rectangle::New(0, 0, kMainGridTileWidth + 8, kMainGridTileHeight + 8, highlightColor, 20);
+        this->mainGridHighlight = Rectangle::New(0, 0, kMainGridTileWidth + 12, kMainGridTileHeight + 12,
+            inst::theme::Color("accent", COLOR("#00FF66FF")), 26);
         // A theme's own mascot (or an empty path hiding it) wins over the legacy override file.
         if (!inst::theme::HasImage("romfs:/images/awoos/5bbdbcf9a5625cd307c9e9bc360d78bd.png") &&
             std::filesystem::exists(inst::config::appDir + "/awoo_main.png")) this->awooImage = Image::New(410, 190, inst::config::appDir + "/awoo_main.png");
@@ -433,7 +422,8 @@ namespace inst::ui {
         this->Add(this->backupUserPickerTitle);
         this->Add(this->optionMenu);
         this->Add(this->backupUserPickerHint);
-        this->awooImage->SetVisible(!inst::config::gayMode);
+        this->awooImage->SetVisible(false);
+        this->appVersionText->SetVisible(false);
         this->updateMainGridSelection();
         this->AddThread(mainMenuThread);
         this->AddThread([this]() {
@@ -702,8 +692,8 @@ namespace inst::ui {
         const int row = this->selectedMainIndex / kMainGridCols;
         const int x = kMainGridStartX + (col * (kMainGridTileWidth + kMainGridGapX));
         const int y = kMainGridStartY + (row * (kMainGridTileHeight + kMainGridGapY));
-        this->mainGridHighlight->SetX(x - 4);
-        this->mainGridHighlight->SetY(y - 4);
+        this->mainGridHighlight->SetX(x - 6);
+        this->mainGridHighlight->SetY(y - 6);
         this->updateMainGridLabelEffects(true);
     }
 
@@ -787,31 +777,22 @@ namespace inst::ui {
     void MainPage::activateSelectedMainItem() {
         switch (this->selectedMainIndex) {
             case 0:
+                inst::ui::g_remoteStartSection.clear();
                 this->remoteInstallMenuItem_Click();
                 break;
             case 1:
-                this->installMenuItem_Click();
+                inst::ui::g_remoteStartSection = "retro_";
+                this->remoteInstallMenuItem_Click();
                 break;
             case 2:
-                this->hddInstallMenuItem_Click();
+                inst::ui::g_remoteStartSection = "installed";
+                this->remoteInstallMenuItem_Click();
                 break;
             case 3:
-                this->mtpInstallMenuItem_Click();
+                instPage::showQueue();
                 break;
             case 4:
-                this->usbInstallMenuItem_Click();
-                break;
-            case 5:
-                this->netInstallMenuItem_Click();
-                break;
-            case 6:
-                this->backupSaveDataMenuItem_Click();
-                break;
-            case 7:
                 this->settingsMenuItem_Click();
-                break;
-            case 8:
-                this->exitMenuItem_Click();
                 break;
             default:
                 break;
@@ -819,63 +800,22 @@ namespace inst::ui {
     }
 
     void MainPage::showSelectedMainInfo() {
-        std::string title;
-        std::string desc;
-        switch (this->selectedMainIndex) {
-            case 0:
-                title = "main.menu.remote"_lang;
-                desc = "main.info.remote"_lang;
-                break;
-            case 1:
-                title = "main.menu.sd"_lang;
-                desc = "main.info.sd"_lang;
-                break;
-            case 2:
-                title = "main.menu.hdd"_lang;
-                desc = "main.info.hdd"_lang;
-                break;
-            case 3:
-                title = "main.menu.mtp"_lang;
-                desc = "main.info.mtp"_lang;
-                break;
-            case 4:
-                title = "main.menu.usb"_lang;
-                desc = "main.info.usb"_lang;
-                break;
-            case 5:
-                title = "main.menu.net"_lang;
-                desc = "main.info.net"_lang;
-                break;
-            case 6:
-                title = "main.menu.backup"_lang;
-                desc = "main.info.backup"_lang;
-                break;
-            case 7:
-                title = "main.menu.set"_lang;
-                desc = "main.info.set"_lang;
-                break;
-            case 8:
-                title = "main.menu.exit"_lang;
-                desc = "main.info.exit"_lang;
-                break;
-            default:
-                return;
-        }
-        mainApp->CreateShowDialog(title, desc, {"common.ok"_lang}, true);
+        static const char* titles[] = {"Tienda", "Retro", "Mis juegos", "Descargas", "Ajustes"};
+        static const char* descs[] = {
+            "Todos los juegos, actualizaciones y DLC de Anonymus Server con sus carátulas.",
+            "Juegos de consolas clásicas. Se guardan en la carpeta /roms de la SD para jugarlos con RetroArch.",
+            "Los juegos que tienes instalados y las actualizaciones que hay para ellos en el servidor.",
+            "Lo que se está descargando e instalando ahora, con su progreso.",
+            "Opciones de la aplicación."
+        };
+        if (this->selectedMainIndex < 0 || this->selectedMainIndex > 4)
+            return;
+        mainApp->CreateShowDialog(titles[this->selectedMainIndex], descs[this->selectedMainIndex], {"common.ok"_lang}, true);
     }
 
     void MainPage::onInput(u64 Down, u64 Up, u64 Held, pu::ui::Touch Pos) {
         if (this->optionMenu != nullptr && this->optionMenu->IsVisible()) {
             return;
-        }
-        // Anonymus Shop: al abrir la app se entra directamente en la tienda si ya hay servidor guardado.
-        static bool anonymusAutoShopDone = false;
-        if (!anonymusAutoShopDone) {
-            anonymusAutoShopDone = true;
-            if (!inst::config::remoteUrl.empty() && inst::util::getIPAddress() != "1.0.0.127") {
-                this->remoteInstallMenuItem_Click();
-                return;
-            }
         }
 
         int bottomTapX = 0;

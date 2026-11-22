@@ -19,6 +19,8 @@
 
 using namespace pu::ui::elm;
 namespace inst::ui {
+    // Sección con la que se abre la tienda (prefijo del id: "retro_", "installed"...). Se vacía al usarse.
+    extern std::string g_remoteStartSection;
     class RemoteScreenshotImage;
     class remoteInstPage : public pu::ui::Layout
     {
@@ -114,6 +116,11 @@ namespace inst::ui {
             std::vector<int> sidebarIndices;
             BottomHintTouchState sidebarTouch;
             void updateSidebar(bool visible);
+            // Ficha del juego: carátula grande y botón Descargar a la izquierda
+            Image::Ref fichaCover;
+            Rectangle::Ref fichaButton;
+            TextBlock::Ref fichaButtonText;
+            TextBlock::Ref fichaInfoText;
             Rectangle::Ref browseDetailPanel;
             std::vector<Rectangle::Ref> gridCardBacks;
             std::vector<TextBlock::Ref> gridCaptions;
