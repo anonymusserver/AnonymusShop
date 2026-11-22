@@ -121,6 +121,9 @@ namespace inst::ui {
             Rectangle::Ref fichaButton;
             TextBlock::Ref fichaButtonText;
             TextBlock::Ref fichaInfoText;
+            std::string typingFull;
+            std::string typingLastTitle;
+            double typingStart = 0;
             Rectangle::Ref browseDetailPanel;
             std::vector<Rectangle::Ref> gridCardBacks;
             std::vector<TextBlock::Ref> gridCaptions;

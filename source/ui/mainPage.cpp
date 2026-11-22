@@ -18,6 +18,7 @@
 #include "ui/bottomHint.hpp"
 
 #include "util/theme.hpp"
+#include "ui/anonymusFx.hpp"
 
 #define COLOR(hex) inst::theme::Palette(hex)
 
@@ -387,10 +388,17 @@ namespace inst::ui {
         if (!inst::theme::HasImage("romfs:/images/awoos/5bbdbcf9a5625cd307c9e9bc360d78bd.png") &&
             std::filesystem::exists(inst::config::appDir + "/awoo_main.png")) this->awooImage = Image::New(410, 190, inst::config::appDir + "/awoo_main.png");
         else this->awooImage = Image::New(410, 190, inst::theme::Asset("romfs:/images/awoos/5bbdbcf9a5625cd307c9e9bc360d78bd.png"));
+        // Lluvia de código detrás de todo
+        this->Add(inst::ui::fx::CodeRain::New(0, 0, 1280, 720, 22, 150, 1.0));
         this->Add(this->awooImage);
         this->Add(this->topRect);
         this->Add(this->botRect);
         this->Add(this->titleImage);
+        // Ojos del hacker que brillan y logo con "glitch" de vez en cuando
+        this->Add(inst::ui::fx::PulseImage::New((1280 - 620) / 2 + 68 - 20, 88 + 72 - 20, "romfs:/images/home/ojos_glow.png",
+            inst::ui::fx::PulseImage::Mode::Pulse, 2.4, 20, 235));
+        this->Add(inst::ui::fx::PulseImage::New((1280 - 620) / 2 - 8, 88, "romfs:/images/home/logo_glitch.png",
+            inst::ui::fx::PulseImage::Mode::Glitch, 4.5, 255, 230));
         this->Add(this->appVersionText);
         this->Add(this->sysBarBack);
         this->Add(this->sysBarFill);
@@ -428,6 +436,7 @@ namespace inst::ui {
         this->AddThread(mainMenuThread);
         this->AddThread([this]() {
             this->updateMainGridLabelEffects(false);
+            this->mainGridHighlight->SetColor(inst::ui::fx::PulsingAccent(90, 255));
         });
     }
 

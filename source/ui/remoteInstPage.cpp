@@ -31,6 +31,7 @@
 #include "ui/bottomHint.hpp"
 
 #include "util/theme.hpp"
+#include "ui/anonymusFx.hpp"
 
 #define COLOR(hex) inst::theme::Palette(hex)
 #define RemoteDlcTrace(...) ((void)0)
@@ -1293,6 +1294,7 @@ namespace inst::ui {
                 this->focusedTitleText, this->focusedMetadataText}) text->SetVisible(false);
         this->sectionHighlight->SetVisible(false);
         this->browseDetailPanel->SetVisible(false);
+        this->Add(inst::ui::fx::CodeRain::New(0, 74, 1280, 586, 30, 60, 0.7));
         this->Add(this->topRect);
         this->Add(this->infoRect);
         this->Add(this->botRect);
@@ -1391,7 +1393,29 @@ namespace inst::ui {
         this->Add(this->saveVersionSelectorMenu);
         this->Add(this->saveVersionSelectorDetailText);
         this->Add(this->saveVersionSelectorHintText);
-        this->AddThread([this] { this->updateDescriptionMedia(); this->updateBrowseDecorations(); });
+        this->AddThread([this] {
+            this->updateDescriptionMedia();
+            this->updateBrowseDecorations();
+            this->gridHighlight->SetColor(inst::ui::fx::PulsingAccent(110, 255));
+            // Título de la sección escribiéndose letra a letra, como en una terminal
+            if (!this->typingFull.empty()) {
+                const double elapsed = inst::ui::fx::NowSeconds() - this->typingStart;
+                std::size_t chars = static_cast<std::size_t>(elapsed * 40.0);
+                std::size_t bytes = 0, count = 0;
+                while (bytes < this->typingFull.size() && count < chars) {
+                    unsigned char c = static_cast<unsigned char>(this->typingFull[bytes]);
+                    bytes += (c < 0x80) ? 1 : (c < 0xE0) ? 2 : (c < 0xF0) ? 3 : 4;
+                    ++count;
+                }
+                if (bytes >= this->typingFull.size()) {
+                    this->pageInfoText->SetText(this->typingFull);
+                    this->typingFull.clear();
+                } else {
+                    const bool cursor = static_cast<int>(elapsed * 8) % 2 == 0;
+                    this->pageInfoText->SetText(this->typingFull.substr(0, bytes) + (cursor ? "_" : " "));
+                }
+            }
+        });
         const std::string screenshotCacheDir = inst::config::appDir + "/cache/screenshots";
         this->descriptionMediaThread = std::thread([this, screenshotCacheDir] { this->descriptionMediaThreadMain(screenshotCacheDir); });
         this->iconDownloadThread = std::thread([this]() {
@@ -1683,7 +1707,17 @@ namespace inst::ui {
             return;
         }
         const auto& section = this->remoteSections[this->selectedSectionIndex];
-        this->pageInfoText->SetText(ClipBrowseText(queueAddMode ? "Add to queue  •  " + section.title : section.title, 26, 396));
+        {
+            const std::string fullTitle = ClipBrowseText(queueAddMode ? "Add to queue  •  " + section.title : section.title, 26, 396);
+            if (fullTitle != this->typingLastTitle) {
+                this->typingLastTitle = fullTitle;
+                this->typingFull = fullTitle;
+                this->typingStart = inst::ui::fx::NowSeconds();
+                this->pageInfoText->SetText("_");
+            } else if (this->typingFull.empty()) {
+                this->pageInfoText->SetText(fullTitle);
+            }
+        }
         this->pageInfoText->SetY(81);
         CenterTextX(this->pageInfoText);
         std::string rightInfo = std::to_string(section.items.size()) + " juegos";
