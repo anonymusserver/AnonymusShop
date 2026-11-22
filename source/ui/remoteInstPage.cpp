@@ -4934,6 +4934,26 @@ namespace inst::ui {
                 this->closeDescriptionOverlay();
                 return;
             }
+            // Ficha del juego: A instala este juego, Y lo añade a la selección.
+            if ((Down & (HidNpadButton_A | HidNpadButton_Plus | HidNpadButton_Y)) && !this->isInstalledSection()
+                && !this->isSaveSyncSection() && !this->isCheatsSection()) {
+                const int index = this->remoteGridMode ? this->remoteGridIndex : this->menu->GetSelectedIndex();
+                this->closeDescriptionOverlay();
+                if (index >= 0 && index < static_cast<int>(this->visibleItems.size())) {
+                    const std::string url = this->visibleItems[index].url;
+                    const bool already = std::any_of(this->selectedItems.begin(), this->selectedItems.end(),
+                        [&](const auto& entry) { return entry.url == url; });
+                    if (!already) this->selectTitle(index);
+                    if (Down & (HidNpadButton_A | HidNpadButton_Plus)) {
+                        if (!this->selectedItems.empty()) this->startInstall();
+                    } else {
+                        this->updateRemoteGrid();
+                        this->browseDecorationKey.clear();
+                        this->updateBrowseDecorations();
+                    }
+                }
+                return;
+            }
 
             if (!this->descriptionScreenshotPaths.empty()) {
                 int tapX = 0;
@@ -5229,6 +5249,14 @@ namespace inst::ui {
                         this->handleSaveSyncAction(this->remoteGridIndex);
                     } else if (this->isCheatsSection()) {
                         this->handleCheatAction(this->remoteGridIndex);
+                    } else if (Down & HidNpadButton_A) {
+                        // Como en las tiendas de siempre: A abre la ficha del juego.
+                        this->openDescriptionOverlay();
+                        if (!this->descriptionOverlayVisible) {
+                            // Sin ficha (p. ej. juegos retro): se descarga directamente.
+                            this->selectTitle(this->remoteGridIndex);
+                            if (!this->selectedItems.empty()) this->startInstall();
+                        }
                     } else {
                         this->selectTitle(this->remoteGridIndex);
                         if (this->visibleItems.size() == 1 && this->selectedItems.size() == 1) {
@@ -6074,7 +6102,7 @@ namespace inst::ui {
         this->descriptionOverlayHintText->SetVisible(canScroll);
         if (canScroll)
             this->descriptionOverlayHintText->SetText("Description · Lines " + std::to_string(start + 1) + "–" + std::to_string(end) + " of " + std::to_string(lineCount));
-        std::string hints = " Close";
+        std::string hints = std::string(this->isInstalledSection() || this->isSaveSyncSection() || this->isCheatsSection() ? "" : "\uE0A0 Instalar     \uE0A3 A\u00F1adir a la selecci\u00F3n     ") + " Close";
         if (canScroll) hints += "    ↑/↓ Scroll description";
         if (this->descriptionScreenshotPaths.size() > 1)
             hints += "     Previous screenshot     Next screenshot";
