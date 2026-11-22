@@ -1394,6 +1394,10 @@ namespace inst::ui {
         this->Add(this->saveVersionSelectorDetailText);
         this->Add(this->saveVersionSelectorHintText);
         this->AddThread([this] {
+            if (this->pendingNewContentPrompt && !this->remoteSections.empty()) {
+                this->pendingNewContentPrompt = false;
+                this->showNewContentPrompt();
+            }
             this->updateDescriptionMedia();
             this->updateBrowseDecorations();
             this->gridHighlight->SetColor(inst::ui::fx::PulsingAccent(110, 255));
@@ -1742,6 +1746,46 @@ namespace inst::ui {
             this->searchInfoText->SetVisible(true);
         } else {
             this->searchInfoText->SetVisible(false);
+        }
+    }
+
+    // Al entrar en la tienda: si hay actualizaciones o DLC nuevos para los juegos instalados, se avisa.
+    void remoteInstPage::showNewContentPrompt() {
+        static bool shownThisSession = false;
+        if (shownThisSession || this->queueAddMode) return;
+        int updatesIndex = -1, dlcIndex = -1;
+        std::size_t updates = 0, dlcs = 0;
+        for (std::size_t i = 0; i < this->remoteSections.size(); i++) {
+            const auto& sec = this->remoteSections[i];
+            if (sec.id == "updates") { updatesIndex = static_cast<int>(i); updates = sec.items.size(); }
+            else if (sec.id == "dlc") { dlcIndex = static_cast<int>(i); dlcs = sec.items.size(); }
+        }
+        if (updates + dlcs == 0) return;
+        shownThisSession = true;
+        std::string text = "Hay novedades en el servidor para los juegos que tienes instalados:\n\n";
+        if (updates) text += "\u2022 " + std::to_string(updates) + (updates == 1 ? " actualizaci\u00F3n nueva\n" : " actualizaciones nuevas\n");
+        if (dlcs) text += "\u2022 " + std::to_string(dlcs) + (dlcs == 1 ? " DLC nuevo\n" : " DLC nuevos\n");
+        text += "\n\u00BFQuieres instalarlo todo ahora?";
+        const int choice = mainApp->CreateShowDialog("Novedades para tus juegos", text, {"Instalar todo", "Ver", "Ahora no"}, false);
+        if (choice == 0) {
+            this->selectedItems.clear();
+            std::unordered_set<std::string> seen;
+            for (int idx : {updatesIndex, dlcIndex}) {
+                if (idx < 0) continue;
+                for (const auto& item : this->remoteSections[idx].items)
+                    if (!item.url.empty() && seen.insert(item.url).second) this->selectedItems.push_back(item);
+            }
+            if (!this->selectedItems.empty()) this->startInstall();
+        } else if (choice == 1) {
+            this->selectedSectionIndex = updates ? updatesIndex : dlcIndex;
+            this->searchQuery.clear();
+            this->remoteGridIndex = 0;
+            this->remoteGridPage = -1;
+            this->gridSelectedIndex = 0;
+            this->gridPage = -1;
+            this->updateSectionText();
+            this->updateButtonsText();
+            this->drawMenuItems(false);
         }
     }
 
@@ -4552,6 +4596,7 @@ namespace inst::ui {
             if (!foundWanted && wanted == "retro_")
                 mainApp->CreateShowDialog("Retro", "Todav\u00EDa no hay juegos retro en el servidor.", {"common.ok"_lang}, true);
         }
+        this->pendingNewContentPrompt = true;
         this->remoteGridMode = inst::config::remoteStartGridMode;
         this->remoteGridIndex = 0;
         this->remoteGridPage = -1;

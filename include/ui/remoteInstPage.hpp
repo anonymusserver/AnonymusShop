@@ -124,6 +124,8 @@ namespace inst::ui {
             std::string typingFull;
             std::string typingLastTitle;
             double typingStart = 0;
+            bool pendingNewContentPrompt = false;
+            void showNewContentPrompt();
             Rectangle::Ref browseDetailPanel;
             std::vector<Rectangle::Ref> gridCardBacks;
             std::vector<TextBlock::Ref> gridCaptions;
