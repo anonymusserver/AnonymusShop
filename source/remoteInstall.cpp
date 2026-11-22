@@ -2918,8 +2918,14 @@ namespace remoteInstStuff {
 
         try {
             nlohmann::json remote = nlohmann::json::parse(fetch.body);
+            std::string motd;
             if (remote.contains("success") && remote["success"].is_string())
-                return remote["success"].get<std::string>();
+                motd = remote["success"].get<std::string>();
+            // Anonymus Server: segundo aviso con los días de suscripción (separado por \x1E)
+            if (remote.contains("subscription") && remote["subscription"].is_string()
+                && !remote["subscription"].get<std::string>().empty())
+                motd += "\x1E" + remote["subscription"].get<std::string>();
+            return motd;
         }
         catch (...) {
             return "";

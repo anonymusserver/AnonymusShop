@@ -5133,8 +5133,18 @@ namespace inst::ui {
         if (this->pendingMotdFetch && Down == 0 && Up == 0 && Held == 0 && Pos.IsEmpty()) {
             this->pendingMotdFetch = false;
             std::string motd = remoteInstStuff::FetchRemoteMotd(this->activeRemoteUrl, inst::config::remoteUser, inst::config::remotePass);
-            if (!motd.empty())
-                mainApp->CreateShowDialog("inst.remote.motd_title"_lang, motd, {"common.ok"_lang}, true);
+            if (!motd.empty()) {
+                std::string welcome = motd, subscription;
+                const auto sep = motd.find('\x1E');
+                if (sep != std::string::npos) {
+                    welcome = motd.substr(0, sep);
+                    subscription = motd.substr(sep + 1);
+                }
+                if (!welcome.empty())
+                    mainApp->CreateShowDialog("inst.remote.motd_title"_lang, welcome, {"common.ok"_lang}, true);
+                if (!subscription.empty())
+                    mainApp->CreateShowDialog("Tu suscripci\u00F3n", subscription, {"common.ok"_lang}, true);
+            }
             return;
         }
         if (Down & HidNpadButton_B) {
