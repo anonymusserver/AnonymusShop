@@ -6,6 +6,7 @@
 #include <fstream>
 #include <iomanip>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <sys/socket.h>
 #include "util/config.hpp"
 #include "util/json.hpp"
@@ -653,12 +654,29 @@ namespace inst::config {
         return ParseRemoteUrlImpl(rawUrl, protocol, host, port, path);
     }
 
+    // Anonymus: en modo "auto" usa la direccion de casa solo si la consola
+    // esta en la misma red; fuera de casa usa automaticamente la de Internet.
+    static bool ConsoleOnSameLan(const std::string& lanUrl)
+    {
+        std::string protocol, host, path;
+        int port = 0;
+        if (!ParseRemoteUrlImpl(lanUrl, protocol, host, port, path)) return true;
+        struct in_addr lanAddr;
+        if (inet_aton(host.c_str(), &lanAddr) == 0) return true;
+        const uint32_t console = ntohl((uint32_t) gethostid());
+        if (console == 0 || console == 0x7F000001) return true;
+        const uint32_t lan = ntohl(lanAddr.s_addr);
+        return (console & 0xFFFFFF00u) == (lan & 0xFFFFFF00u);
+    }
+
     std::string BuildRemoteUrl(const RemoteProfile& remote)
     {
         if (!remote.lanUrl.empty() || !remote.wanUrl.empty()) {
             if (remote.connection == "lan") return remote.lanUrl;
             if (remote.connection == "wan") return remote.wanUrl;
-            return remote.lanUrl.empty() ? remote.wanUrl : remote.lanUrl;
+            if (remote.lanUrl.empty()) return remote.wanUrl;
+            if (!remote.wanUrl.empty() && !ConsoleOnSameLan(remote.lanUrl)) return remote.wanUrl;
+            return remote.lanUrl;
         }
         std::string host = Trim(remote.host);
         if (host.empty())
